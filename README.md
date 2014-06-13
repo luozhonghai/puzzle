@@ -13,6 +13,4 @@ puzzle
    executable program for windows is at "proj.win32\Debug.win32" folder.
    </p>
 screen shot:
-![image]
-
-(https://github.com/luozhonghai/puzzle/blob/master/screenshot/20140613.jpg)
+![image](https://github.com/luozhonghai/puzzle/blob/master/screenshot/20140613.jpg)
