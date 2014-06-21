@@ -6,8 +6,6 @@ USING_NS_CC;
 #include "ChessBall.h"
 
 
-
-
 class ChessBoard : public CCLayer
 {
 public:
@@ -28,12 +26,22 @@ public:
 
 	void chessMoveEnd(CCNode* pSender,void* pData);
 
+
+	bool checkChessCancel();
+
+	void chessCancelBySequence(float dt);
+
+	void latentChessCancel(float dt);
+
 	// cancel linked chess end notify
-	void chessCancelEnd(float dt);
+	void chessCancelEnd();
 
 	void newBoardGenerate(float dt);
 	
-	bool checkChessCancel();
+	// call from game layer: time end~
+	void notifyRoundEnd();
+
+	void latentRoundEnd(float dt);
 private:
 
 	CCSize _screenSize;
@@ -61,10 +69,25 @@ private:
 
 	EChessProperty getRandChessProperty();
 
+	EChessProperty currentChessCheckProperty;
 	//for cancel chess flag
 	int visit[6][6];
 	//sum of cancelled chess each colum
 	int cancelCount[6];
+
+	//score for single ball
+	int singleCancelScore;
+	// get bonus when cancel balls of multiple property in one touch
+	int comboBonus;
+	// property types for one touch
+	int cancelTypes;
+	//my local score
+	int localScore;
+
+	// relative with notifyRoundEnd
+	bool _roundEnd;
+	// ignore flag for end game when cancelling
+	bool _cancelling;
 };
 
 

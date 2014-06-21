@@ -1,5 +1,6 @@
 #include "ChessBoard.h"
 #include "time.h"
+#include "GameLayer.h"
 
 bool ChessBoard::init()
 {
@@ -13,10 +14,17 @@ bool ChessBoard::init()
 	_chessArray = CCArray::createWithCapacity(36);
 	_chessArray->retain();
 
+	//_activeCell = NULL;
 	_activeCell = new ChessCell();
-	//listen for touches
-	this->setTouchEnabled(true);
+	_activeCell->ball = NULL;
 
+
+	singleCancelScore = 23;
+	comboBonus = 34;
+	cancelTypes = 0;
+	localScore = 0;
+
+	_roundEnd = false;
 	return true;
 
 }
@@ -71,12 +79,14 @@ bool ChessBoard::initBoard(CCSize ccpSize)
 	
 	memset(visit, 0, sizeof(visit));
 	memset(cancelCount, 0, sizeof(cancelCount));
+
 	return true;
 }
 
 ChessBoard::~ChessBoard()
 {
 	CC_SAFE_RELEASE(_chessArray);
+	CC_SAFE_DELETE(_activeCell);
 }
 
 void ChessBoard::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
@@ -102,6 +112,7 @@ void ChessBoard::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
 				if (sprite->boundingBox().containsPoint(tap))
 				{			
 					sprite->setOpacity(128);
+				//	_activeCell = sprite->cell;
 					_activeCell->ball = sprite;
 					_pickedChess->setVisible(true);
 					_pickedChess->setPositionX(tap.x);
@@ -121,6 +132,13 @@ void ChessBoard::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 	CCSetIterator i;
 	CCTouch* touch;
 	ChessBall* sprite;
+
+	_cancelling = true;
+
+	if (_roundEnd)
+	{
+		return;
+	}
 	int count = _chessArray->count();
 
 	for (i = pTouches->begin(); i != pTouches->end(); i++)
@@ -138,7 +156,7 @@ void ChessBoard::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 				if (sprite->boundingBox().containsPoint(pos))
 				{
 				//	sprite->setOpacity(128);
-					if (_activeCell->ball != sprite)
+					if (_activeCell->ball != NULL && _activeCell->ball != sprite)
 					{
 						CCMoveTo * move = CCMoveTo::create(0.1f, _activeCell->ball->getPosition());
 						CCCallFuncND * end = CCCallFuncND::create(this, callfuncND_selector(ChessBoard::chessMoveEnd), _activeCell->ball);
@@ -164,23 +182,39 @@ void ChessBoard::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 
 void ChessBoard::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
 {
+
+
 	if (_pickedChess)
 	{
 		_pickedChess->setVisible(false);
-		_activeCell->ball->setOpacity(255);
+		if (_activeCell->ball)
+		  _activeCell->ball->setOpacity(255);
+	}
+
+	if (_roundEnd)
+	{
+		_cancelling = false;
+		this->setTouchEnabled(false);
+		this->scheduleOnce(schedule_selector(ChessBoard::latentRoundEnd), 1.0f);
+		return;
 	}
 
 	if (checkChessCancel())
 	{
+		//set cancelling flag
+		_cancelling = true;
 		//disable touches
 		this->setTouchEnabled(false);
-		scheduleOnce(schedule_selector(ChessBoard::chessCancelEnd), 0.55f);
+		currentChessCheckProperty = ECP_Bunny;
+		chessCancelBySequence(0.0f);
 	}
 	else
 	{
+		_cancelling = false;
 		//enable touches
 		this->setTouchEnabled(true);
 	}
+
 }
 
 void ChessBoard::chessMoveEnd(CCNode* pSender, void* pData)
@@ -215,6 +249,7 @@ bool ChessBoard::checkChessCancel()
 				visit[i][j] = 1;
 				visit[i][j+1] = 1;
 				visit[i][j+2] = 1;
+				findCancel = true;
 			}			
 		}
 	}
@@ -229,22 +264,7 @@ bool ChessBoard::checkChessCancel()
 				visit[i][j] = 1;
 				visit[i+1][j] = 1;
 				visit[i+2][j] = 1;
-			}
-		}
-	}
-
-	for (i = 0; i < 6; i++)
-	{
-		for (j = 0; j < 6; j++)
-		{
-			if (visit[i][j] == 1)
-			{
 				findCancel = true;
-				CCFadeTo * fade = CCFadeTo::create(0.5f, 0);
-				CCAction * action = CCSequence::create(fade, NULL);
-				_chessCell[i][j].ball->runAction(action);
-
-				cancelCount[i]++;
 			}
 		}
 	}
@@ -252,8 +272,58 @@ bool ChessBoard::checkChessCancel()
 	return findCancel;
 }
 
+void ChessBoard::chessCancelBySequence(float dt)
+{
+	int i, j;
+	bool bChecked=false;
+	int cancelCountOnce = 0;
+	for (i = 0; i < 6; i++)
+	{
+		for (j = 0; j < 6; j++)
+		{
+			if (visit[i][j] == 1 && _chessCell[i][j].ball->getChessProperty() == currentChessCheckProperty)
+			{			
+				CCFadeTo * fade = CCFadeTo::create(0.5f, 0);
+				CCAction * action = CCSequence::create(fade, NULL);
+				_chessCell[i][j].ball->runAction(action);
+				cancelCount[i]++;
+				bChecked = true;
+				cancelCountOnce += 1;
+			}
+		}
+	}
+	if (! bChecked)
+	{
+		if (currentChessCheckProperty != ECP_Frog)
+		{
+			currentChessCheckProperty = EChessProperty(int(currentChessCheckProperty) + 1);
+			chessCancelBySequence(0.0);
+		}
+		else
+			chessCancelEnd();
+	}
+	else
+	{
+		localScore += cancelCountOnce * singleCancelScore + cancelTypes * comboBonus;
+		cancelTypes += 1;
+		this->scheduleOnce(schedule_selector(ChessBoard::latentChessCancel), 0.55f);
+	}
 
-void ChessBoard::chessCancelEnd(float dt)
+}
+
+void ChessBoard::latentChessCancel(float dt)
+{
+	if (currentChessCheckProperty != ECP_Frog)
+	{
+		currentChessCheckProperty = EChessProperty(int(currentChessCheckProperty) + 1);
+		this->scheduleOnce(schedule_selector(ChessBoard::chessCancelBySequence), 0.001f);
+	}
+	else
+		chessCancelEnd();
+
+	((GameLayer *)(this->getParent()))->updateLocalScore(localScore);
+}
+void ChessBoard::chessCancelEnd()
 {
 	int lack = 0;
 	int i, j;
@@ -296,23 +366,55 @@ void ChessBoard::chessCancelEnd(float dt)
 	memset(visit, 0, sizeof(visit));
 	memset(cancelCount, 0, sizeof(cancelCount));
 
-	scheduleOnce(schedule_selector(ChessBoard::newBoardGenerate), 0.35f);
+	this->scheduleOnce(schedule_selector(ChessBoard::newBoardGenerate), 0.35f);
 }
 
 void ChessBoard::newBoardGenerate(float dt)
 {
+	if (_roundEnd)
+	{
+		_cancelling = false;
+		this->setTouchEnabled(false);
+		this->scheduleOnce(schedule_selector(ChessBoard::latentRoundEnd), 1.0f);
+		return;
+	}
 	if (checkChessCancel())
 	{
+		_cancelling = true;
 		//disable touches
 		this->setTouchEnabled(false);
-		scheduleOnce(schedule_selector(ChessBoard::chessCancelEnd), 0.55f);
+		currentChessCheckProperty = ECP_Bunny;
+		chessCancelBySequence(0.0f);
 	}
 	else
 	{
+		_cancelling = false;
 		//enable touches
 		this->setTouchEnabled(true);
+		//reset cancel types before new touch
+		cancelTypes = 0;
 	}
 
 }
+
+void ChessBoard::notifyRoundEnd()
+{
+	_roundEnd = true;
+	if (!_cancelling)
+	{
+		this->setTouchEnabled(false);
+		this->scheduleOnce(schedule_selector(ChessBoard::latentRoundEnd), 1.0f);
+	}
+
+}
+
+void ChessBoard::latentRoundEnd(float dt)
+{
+	((GameLayer *)(this->getParent()))->roundEnd();
+}
+
+
+
+
 
 
