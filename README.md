@@ -18,11 +18,11 @@ screen shot:
 2014-6-22
 
    <p>
-1. balls which have samw color are cancelled by sequence now and makes combos.
+1. balls which have same color are cancelled by sequence now and makes combos.
   </p>
    <p>
 2. implement game round in 60 seconds and calculate scores.
    </p>
    <p>
-3. implement puzzle server with ROR , send player's score and then update high score after a game round.
+3. implement basic puzzle server with ROR , send player's score and then update high score after a game round.
    </p>
