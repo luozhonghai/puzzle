@@ -27,6 +27,8 @@ public:
 
 	void createHud();
 
+	void createBG();
+
 	void menuCloseCallback(CCObject* pSender);
 
 	void menuGetScoreCallback(CCObject* pSender);

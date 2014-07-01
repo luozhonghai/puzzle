@@ -38,8 +38,17 @@ bool ChessBoard::initBoard(CCSize ccpSize)
 	float chessScale = _chessSize.width / 100.f;
 
 	CCPoint chessOrigin;
-	chessOrigin.x = 70.f; //100
-	chessOrigin.y = 50.f; // 35
+	/**/
+	chessOrigin.x = _screenSize.width * 0.05 + _chessSize.width * 0.5; //70
+	chessOrigin.y = _screenSize.height * 0.1 + _chessSize.width * 0.5; // 50
+
+	//CREATE CHESS BG
+	CCSprite* chessbg = CCSprite::create("Chess_BG.png");
+	this->addChild(chessbg);
+	chessbg->setAnchorPoint(ccp(0, 0));
+	chessbg->setPosition(ccp(_screenSize.width * 0.05, _screenSize.height * 0.1));
+	chessbg->setScale(chessScale);
+
 
 	CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("ball.plist");
 	_gameBatchNode = CCSpriteBatchNode::create("ball.png");
@@ -50,7 +59,7 @@ bool ChessBoard::initBoard(CCSize ccpSize)
 	srand(time(0));
 	for (int i = 0; i < 6; i++)
 	{
-		for (int j = 0; j < 6; j++)
+		for (int j = 0; j < 5; j++)
 		{
 			EChessProperty prop = getRandChessProperty();
 			chess = ChessBall::createWithProperty(prop);
@@ -241,7 +250,7 @@ bool ChessBoard::checkChessCancel()
 
 	for (i = 0; i < 6; i ++)
 	{
-		for (j = 0; j < 4; j++)
+		for (j = 0; j < 3; j++)
 		{
 			if (_chessCell[i][j].ball->getChessProperty() == _chessCell[i][j + 1].ball->getChessProperty()
 				&& _chessCell[i][j].ball->getChessProperty() == _chessCell[i][j + 2].ball->getChessProperty())
@@ -256,7 +265,7 @@ bool ChessBoard::checkChessCancel()
 
 	for (i = 0; i < 4; i++)
 	{
-		for (j = 0; j < 6; j++)
+		for (j = 0; j < 5; j++)
 		{
 			if (_chessCell[i][j].ball->getChessProperty() == _chessCell[i+1][j].ball->getChessProperty()
 				&& _chessCell[i][j].ball->getChessProperty() == _chessCell[i+2][j].ball->getChessProperty())
@@ -279,7 +288,7 @@ void ChessBoard::chessCancelBySequence(float dt)
 	int cancelCountOnce = 0;
 	for (i = 0; i < 6; i++)
 	{
-		for (j = 0; j < 6; j++)
+		for (j = 0; j < 5; j++)
 		{
 			if (visit[i][j] == 1 && _chessCell[i][j].ball->getChessProperty() == currentChessCheckProperty)
 			{			
@@ -335,15 +344,15 @@ void ChessBoard::chessCancelEnd()
 			continue;
 		}
 
-		for (j = 0; j < 6; j++)
+		for (j = 0; j < 5; j++)
 		{
 			if (visit[i][j] == 1)
 			{
 				lack++;
-				_chessCell[i][j].ball->setPosition(ccp(_chessCell[i][j].pos.x, _chessCell[i][5].pos.y + lack * _chessSize.height));
+				_chessCell[i][j].ball->setPosition(ccp(_chessCell[i][j].pos.x, _chessCell[i][4].pos.y + lack * _chessSize.height));
 				_chessCell[i][j].ball->setChessProperty(getRandChessProperty());
 				
-				int id = 5 - cancelCount[i] + lack;
+				int id = 4 - cancelCount[i] + lack;
 				CCMoveTo * move = CCMoveTo::create(0.3f, _chessCell[i][id].pos); 
 				CCFadeTo * fade = CCFadeTo::create(0.3f, 255);
 				CCSpawn * moveFade = CCSpawn::create(move, fade, NULL);

@@ -18,8 +18,12 @@ bool GameLayer::init()
 	_screenSize = CCDirector::sharedDirector()->getWinSize();
 
 	_running = false;
+
+	//createBG
+	createBG();
 	//create Hud
 	createHud();
+
 
 	//listen for touches
 	this->setTouchEnabled(true);
@@ -62,7 +66,7 @@ void GameLayer::update(float delta)
 void GameLayer::createChessBoard()
 {
 	m_board = ChessBoard::create();
-	m_board->initBoard(ccp(420.f, 420.f));
+	m_board->initBoard(ccp(_screenSize.width * 0.9, _screenSize.width * 0.9));//420
 	this->addChild(m_board,0,100);
 
 
@@ -170,7 +174,7 @@ void GameLayer::menuGetScoreCallback(CCObject* pSender)
 	cocos2d::extension::CCHttpRequest* request = new cocos2d::extension::CCHttpRequest();
 	string player = "lolo";
 
-	string requestUrl = "127.0.0.1:3000/server/score/get.json/?player=" + player;
+	string requestUrl = "192.168.1.101:3000/server/score/get.json/?player=" + player;
 	//string requestUrl = "127.0.0.1:3000/server/highscore.json";
 	//string requestUrl = "127.0.0.1:3000/server/score/set/?player=" + player + "&score=" + score_str.m_sString;
 	request->setUrl(requestUrl.c_str());
@@ -183,10 +187,12 @@ void GameLayer::menuGetScoreCallback(CCObject* pSender)
 
 void GameLayer::onHttpGetScoreCompleted(CCHttpClient* client, CCHttpResponse* response)
 {
+	/*
 	AllocConsole();
 	freopen("CONIN$", "r", stdin);
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
+	*/
 	if (!response)
 	{
 		return;
@@ -222,7 +228,7 @@ void GameLayer::menuSetScoreCallback(CCObject* pSender)
 	cocos2d::extension::CCHttpRequest* request = new cocos2d::extension::CCHttpRequest();
 
 	//string requestUrl = "127.0.0.1:3000/server/score/set/?player=" + player + "&score=" + score_str->m_sString;
-	string requestUrl = "127.0.0.1:3000/server/score/set";
+	string requestUrl = "192.168.1.101:3000/server/score/set";
 	request->setUrl(requestUrl.c_str());
 	request->setRequestType(cocos2d::extension::CCHttpRequest::kHttpPost);
 	request->setTag("Test Set");
@@ -330,7 +336,7 @@ void GameLayer::menuGetHighScoreCallback(CCObject* pSender)
 {
 	cocos2d::extension::CCHttpRequest* request = new cocos2d::extension::CCHttpRequest();
 	//string requestUrl = "127.0.0.1:3000/server/score/get.json/?player=" + player;
-	string requestUrl = "127.0.0.1:3000/server/highscore.json";
+	string requestUrl = "192.168.1.101:3000/server/highscore.json";
 	//string requestUrl = "127.0.0.1:3000/server/score/set/?player=" + player + "&score=" + score_str.m_sString;
 	request->setUrl(requestUrl.c_str());
 	request->setRequestType(cocos2d::extension::CCHttpRequest::kHttpGet);
@@ -342,10 +348,11 @@ void GameLayer::menuGetHighScoreCallback(CCObject* pSender)
 
 void GameLayer::onHttpGetHighScoreCompleted(CCHttpClient* client, CCHttpResponse* response)
 {
+	/*
 	AllocConsole();
 	freopen("CONIN$", "r", stdin);
 	freopen("CONOUT$", "w", stdout);
-	freopen("CONOUT$", "w", stderr);
+	freopen("CONOUT$", "w", stderr);*/
 	if (!response)
 	{
 		return;
@@ -378,5 +385,16 @@ void GameLayer::onHttpGetHighScoreCompleted(CCHttpClient* client, CCHttpResponse
 	CCString* value = CCString::createWithFormat("Top: %i", itemInfo);
 	_highScoreDisplay->setString(value->getCString());
 	_highScore = itemInfo;
+}
+
+void GameLayer::createBG()
+{
+	CCSprite* bg = CCSprite::create("Scence_BG.png");
+	this->addChild(bg);
+	float scaleX = _screenSize.width / bg->getContentSize().width;
+	float scaleY = _screenSize.height / bg->getContentSize().height;
+	bg->setPosition(ccp( _screenSize.width * 0.5, _screenSize.height * 0.5));
+	bg->setScaleX(scaleX);
+	bg->setScaleY(scaleY);
 }
 
