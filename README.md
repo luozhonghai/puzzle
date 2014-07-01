@@ -26,3 +26,11 @@ screen shot:
    <p>
 3. implement basic puzzle server with ROR , send player's score and then update high score after a game round.
    </p>
+
+2014-6-30
+   <p>
+1. add background image for the game and adjust the position of sprites for different screens, change the size of chess        board to 5*6.
+  </p>
+   <p>
+2. test the connection to server on android emulator successfully.
+   </p>
